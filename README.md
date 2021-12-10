@@ -52,7 +52,7 @@ __Note:__ All Python scripts save output to a log file in __logs__ directory __e
 3. Run __upload_datasets_to_s3.py__ to upload the output datasets in __processed_data__ directory to s3 bucket.
 4. Run __create_staging_tables.py__ to create staging tables in destination Redshift database.
 5. Run __create_wh_tables.py__ to create warehouse tables in destination Redshift database.
-6. Run __etl.py__ to load staging tables from s3 datasets and then load dimension and fact tables using SQL against staging tables.
+6. Run __etl.py__ to load staging tables from s3 datasets and then load dimension and fact tables using SQL against staging tables. __Note:__ This script completed in about an hour.
 
 ### Data dictionary:
 * __vaccine_dim__ table

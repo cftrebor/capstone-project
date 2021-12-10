@@ -1,0 +1,13 @@
+[DEV]
+HOST = 
+DB_NAME =
+DB_USER =
+DB_PASSWORD =
+DB_PORT =
+
+
+[AWS]
+aws_access_key_id =
+aws_secret_access_key =
+s3_bucket = 
+iam_role = 
