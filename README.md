@@ -21,7 +21,7 @@
 
 * __Cleaning the data__
 
-	The datasets used for this project did not include duplicate values that had to be handled. Missing values were the biggest problem with the data. To handle the missing values (NaN) code was written to default these missing values based on the data type of each pandas dataframe column. Date columns defaulted to 0001-01-01, strings and objects were defaulted to a space character, and float and integer columns defaulted to -1.
+	The datasets used for this project did not include duplicate values that had to be handled. Missing values were the biggest problem with the data. Where I wanted to aggregate values I was able to use DISTINCT to prevent generating duplicates. To handle the missing values (NaN) code was written to default these missing values based on the data type of each pandas dataframe column. Date columns defaulted to 0001-01-01, strings and objects were defaulted to a space character, and float and integer columns defaulted to -1.
 
 	All datasets included records from all over the world not just the United States. All non-US records were removed from the datasets and the Washington DC and New York City specific records were removed from these data sources as these numbers were included in the higher level state data. The Bing search data did not include a state abbreviation column so this column was created and the apropriate value populated by using a state abbreviation dictionary defined in the ETL code. This state abbreviation addition allows joining the Bing search data to other database tables that include this information.
 
@@ -43,6 +43,8 @@ The datasets are cleansed and processed locally using Pandas dataframes. Once th
 
 ### Data pipeline steps:
 
+All pipeline scripts are in the __ETL__ directory of the repository.
+
 __Note:__ All Python scripts save output to a log file in __logs__ directory __except__ upload_datasets_to_s3 which prints output to the screen.
 
 1. Update __config__ file to add appropriate values for destination databases and AWS credentials and s3 bucket.
@@ -54,6 +56,8 @@ __Note:__ All Python scripts save output to a log file in __logs__ directory __e
 
 ### Data dictionary:
 * __vaccine_dim__ table
+
+	Primary Key = (date, location)
 
 	| Column | Data Type | Description |
 	| ------ | --------- | ----------- |
@@ -77,6 +81,8 @@ __Note:__ All Python scripts save output to a log file in __logs__ directory __e
 	
 * __cases_deaths_dim__ table
 
+	Primary Key = (submission_date, state)
+
 	| Column | Data Type | Description |
 	| ------ | --------- | ----------- |
 	|submission_date| date| date of counts |
@@ -92,6 +98,8 @@ __Note:__ All Python scripts save output to a log file in __logs__ directory __e
 
 * __bing_dim__ table
 
+	Primary Key = (date, state_abbr)
+
 	| Column | Data Type | Description |
 	| ------ | --------- | ----------- |
 	| date | date | date of Bing search |
@@ -99,6 +107,8 @@ __Note:__ All Python scripts save output to a log file in __logs__ directory __e
 	| query | varchar | Bing search query |
 
 * __covid_fact__ table
+
+	Primary Key = (date, location)
 
 	| Column | Data Type | Description |
 	| ------ | --------- | ----------- |
@@ -117,31 +127,44 @@ __Note:__ All Python scripts save output to a log file in __logs__ directory __e
 
 1. __Goal__
 
-	The primary goal for this covid_fact table was to...
+	The primary goal for this project was to enable searching of COVID-19 trends and if there was any correlation between the different dimensions and would mostly be used for reporting purposes.
+	* One could search the fact table by state to see how the trends of COVID-19 cases and deaths and vaccines changed over time. The SQL query would be something like:
 
-	Apache Spark isn’t really needed for this data pipeline as the pipeline does not require a real-time big data analytics and is not aggregating data from sources outside a DBMS such as S3.  
+		```	
+		SELECT date, tot_cases, tot_death, administered, additional_doses
+		FROM covid_fact
+		WHERE location = 'CA'
+		ORDER BY date asc;
+		```
+
+	* It is also interesting to see how Bing search queries changed throughout the pandemic for a specific state. The SQL query would be something like:
+
+		```
+		SELECT date, bing_search_queries
+		FROM covid_fact
+		WHERE location = 'NY'
+		ORDER BY date asc;
+		```
+
+	Apache Spark isn’t really needed for this data pipeline as the data is not streaming and is updated via regular batch processing. This pipeline does not require real-time big data analytics at this time but could be needed in the future.
 	
-	Airflow would definitely be incorporated to automate and schedule the data pipeline so
-	manual intervention is not needed in order to execute the pipeline. Airflow would also allow 
-	the data pipeline to be integrated into the team’s incident notification tool.
+	Airflow would definitely be incorporated to automate and schedule the data pipeline so manual intervention is not needed in order to execute the pipeline. Airflow would also allow the data pipeline to be integrated into the team’s incident notification solution.
 
 2. __Rationale__
 
-	AWS Redshift was chosen as the database since the data is coming from disparate sources and is relational in nature based on relation of dates and locations. I chose not to use S3 for the stage data as I found it useful in this case to have relational database functionality to process new/future records and also because Spark was not needed to process the staged data.
+	AWS Redshift was chosen as the database since the data is coming from disparate sources and is relational in nature based on relation of date and location values. A relational database model and available aggregate functions are helpful in this case. A noSQL database engine would not be more appropriate for this project due to data volume and type of data used in the project.
 
 3. __Steps of process__
 
-	This is documented in the __Data pipeline steps__ section under __Step 3__.
+	This is documented in the __Data pipeline steps__ section under __Step 4__.
 
 4. __Propose frequency of pipeline execution__
 
-	My proposition of pipeline execution frequency would depend on the needs of the 
-	downstream customer and the frequency that the data at the source was updated. I believe it 
-	would be reasonable to update this data weekly to balance prevention of not having current 
-	enough data versus the utilization of computing resources to process and store the data for 
-	querying by end users.
+	My proposition of pipeline execution frequency would depend on the needs of the downstream customer and the frequency that the data at the source was updated. I believe it would be reasonable to update this data weekly to balance prevention of not having current enough data versus the utilization of computing resources to process and store the data for querying by end users.
 
 5. __GitHub Repository__
+
+	All pipeline scripts are in the __ETL__ directory of the repository.
 
 	[https://github.com/cftrebor/capstone-project](https://github.com/cftrebor/capstone-project)
 
@@ -150,18 +173,20 @@ __Note:__ All Python scripts save output to a log file in __logs__ directory __e
 
 * __Data was increased by 100x:__
 
-	I would break out the staging tables into a new Redshift cluster so processing for staging does not impact warehouse processing against fact/dimension tables.
-
-	I would also break up the data into smaller pieces and use S3 to store this data and implement Spark to process the greater amount of data in a parallel distributed fashion to prevent data processing from running past SLA or an acceptable amount of time.
+	I would:
+	* Ensure Redshift cluster was sized for such a volume, more computing resources might be necessary.
+	* Break out the staging tables into a new Redshift cluster so processing for staging data does not impact warehouse processing against the fact/dimension tables. 
+	* Review current data partitioning and sorting to see if there is a partitioning/sorting strategy that would allow for better performance and storage. 
+	* Implement Spark to process the greater volume of data in a parallel distributed fashion to increase efficiency of data processing.
               
 * __Pipelines were run on a daily basis by 7:00 am:__
 
-	I would break up the datasets to process only data records created/updated since the previous run of the pipeline and not always process the full datasets. 
+	I would:
+	* Implement Apache Airflow in order to schedule/automate the data pipeline and enforce the 7:00 AM SLA. Airflow would also allow integration into on-call paging software so an on-call resource could be engaged for follow up.
 
-	I would also ensure to implement Airflow to schedule/automate the data pipeline and enforce the 7:00 AM SLA.
 
 * __Database needed to be accessed by 100+ people:__
 
-	I would break out the staging tables into a new Redshift cluster so processing for staging does not impact warehouse processing against fact/dimension tables.
-
-	I would  also closely analyze database table partitioning, sorting, and indexes to maximize efficiency and concurrency at the database level. I would also review all SQL associated with the pipeline to ensure each query performed as efficiently as possible and minimal sorts were being performed.
+	I would:
+	* Break out the staging tables into a new Redshift cluster so processing for staging does not impact warehouse processing against fact/dimension tables. 
+	* Perform a deep analysis of the database design such as table partitioning and sorting to maximize efficiency and concurrency at the database level.
