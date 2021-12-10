@@ -31,21 +31,77 @@ Date and location values are utilized to relate the data records from the dispar
 
 __Data pipeline steps:__
 
-__Note:__ All Python scripts save output to a log file in __logs__ directory.
+__Note:__ All Python scripts save output to a log file in __logs__ directory __except__ upload_datasets_to_s3 which prints output to the screen.
 
 1. Update __config__ file to add appropriate values for destination databases and AWS credentials and s3 bucket.
 2. Run __process_source_data.py__ to cleanse/process datasets stored in __source_data__ directory. The output datasets are saved to the __processed_data__ directory.
 3. Run __upload_datasets_to_s3.py__ to upload the output datasets in __processed_data__ directory to s3 bucket.
-
 4. Run __create_staging_tables.py__ to create staging tables in destination Redshift database.
-
 5. Run __create_wh_tables.py__ to create warehouse tables in destination Redshift database.
-
 6. Run __etl.py__ to load staging tables from s3 datasets and then load dimension and fact tables using SQL against staging tables.
 
 ## Step 4: Run ETL to model data
 
-... data dictionaries ...
+### Data dictionary
+* __vaccine_dim__ table
+
+	| Column | Data Type | Description |
+	| ------ | --------- | ----------- |
+	| date | date | date of vaccine record |
+	| location | char(2) | stores state abbreviation for state where vaccine record originates |
+	| distributed | integer | total number of distributed vaccine doses |
+	| distributed_janssen | integer | total number of J&J/Janssen doses delivered |
+	| distributed_moderna  | integer | total number of Moderna doses delivered |
+	| distributed_pfizer | integer | total number of Pfizer-BioNTech doses delivered |
+	| distributed_unk_manuf | integer | total number of doses from unknown manufacturer delivered |
+	| administered | integer | total number of administered doses based on the state where administered |
+	| administered_janssen | integer | total number of J&J/Janssen doses administered |
+	| administered_moderna | integer | total number of Moderna doses administered |
+	| administered_pfizer | integer | total number of Pfizer-BioNTech doses administered |
+	| administered_unk_manuf | integer | total number of doses from unknown manufacturer administered |
+	| additional_doses | integer | total number of people who are fully vaccinated and have received a booster (or additional) dose |
+	| additional_doses_moderna | integer | total number of fully vaccinated people who have received a Moderna booster (or additional) dose |
+	| additional_doses_pfizer | integer | total number of fully vaccinated people who have received a Pfizer booster (or additional) dose |
+	| additional_doses_janssen | integer | total number of fully vaccinated people who have received a Janssen  booster (or additional) dose |
+	| additional_doses_unk_manuf | integer | total number of fully vaccinated people who have received an other or unknown booster (or additional) dose |
+	
+* __cases_deaths_dim__ table
+
+	| Column | Data Type | Description |
+	| ------ | --------- | ----------- |
+	|submission_date| date| date of counts |
+	|state| char(2)| jurisdiction |
+	|tot_cases| integer| total number of cases |
+	|conf_cases| integer| total confirmed cases |
+	|prob_cases| integer| total probably cases |
+	|new_case| integer| number of new cases |
+	|tot_death| integer| total number of deaths |
+	|conf_death| integer | total number of confirmed deaths |
+	|prob_death| integer| total number of probable deaths |
+	|new_death| integer| number of new deaths |
+
+* __bing_dim__ table
+
+	| Column | Data Type | Description |
+	| ------ | --------- | ----------- |
+	| date | date | date of Bing search |
+	| state_abbr | char(2) | two character state abbreviation |
+	| query | varchar | Bing search query |
+
+* __covid_fact__ table
+
+	| Column | Data Type | Description |
+	| ------ | --------- | ----------- |
+	| date |  date | date of record (value matches for all three dimension tables) |
+	| location | char(2) | two character state abbreviation |
+	|tot_cases | integer | total number of COVID-19 cases |
+	|new_case | integer | total number of new COVID-19 cases |
+	|tot_death | integer | total deaths from COVID-19 |
+	|new_death | integer | new deaths from COVID-19 |
+	|distributed | integer | total number of distributed vaccine doses |
+	|administered | integer | total number of administered doses based on the state where administered |
+	|additional_doses | integer | total number of people who are fully vaccinated and have received a booster (or additional) dose |
+	|bing_search_queries | varchar | top 5 Bing searches for this date and state |
 
 ## Step 5: Complete project write up
 
