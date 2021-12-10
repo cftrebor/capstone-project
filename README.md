@@ -21,15 +21,27 @@
 
 * __Cleaning the data__
 
-	The datasets used for this project did not include duplicate values that had to be handled. Missing values were the biggest problem with the data. To handle the missing values a function was created to default these values with respect to the dtype of the pandas column. Date columns defaulted to 0001-01-01, strings and objects were defaulted to a space character, and float and integer columns defaulted to -1.
+	The datasets used for this project did not include duplicate values that had to be handled. Missing values were the biggest problem with the data. To handle the missing values (NaN) code was written to default these missing values based on the data type of each pandas dataframe column. Date columns defaulted to 0001-01-01, strings and objects were defaulted to a space character, and float and integer columns defaulted to -1.
 
-	All datasets included records from all over the world not just the United States. All non-US records were removed from the datasets and the New York City specific records were removed from the cases and death data as these numbers were included in the New York state data. The Bing search data did not include a state abbreviation column so this column was created and the data populated by using a state abbreviation dictionary defined in the ETL code. This state abbreviation addition allows joining the Bing search data to other database tables that include this information.
+	All datasets included records from all over the world not just the United States. All non-US records were removed from the datasets and the Washington DC and New York City specific records were removed from these data sources as these numbers were included in the higher level state data. The Bing search data did not include a state abbreviation column so this column was created and the apropriate value populated by using a state abbreviation dictionary defined in the ETL code. This state abbreviation addition allows joining the Bing search data to other database tables that include this information.
+
+	Other data related issues rooted from date formats being different and this was handled by specifying the appropriate format in the copy command when populating the Redshift staging tables from the s3 datasets
 
 ## Step 3: Define data model
 
-Date and location values are utilized to relate the data records from the disparate COVID-19 datasources.
+### Conceptual data model:
+The dimensions for this data model are vaccination data, case and death data, and Bing search data. Date and location values were the only values common to all COVID-19 datasets, all other values included in each dataset were specific to that dimension and did not exist in another dimension. The fact table is populated by using date and location values from all three dimension tables then loading the joined data into the __covid_fact__ table.
 
-__Data pipeline steps:__
+* __Dimension tables:__ vaccine_dim, cases_deaths_dim, bing_dim
+
+* __Fact table:__		covid_fact
+
+### Pipeline steps:
+The datasets are cleansed and processed locally using Pandas dataframes. Once the Pandas dataframes are clean and fully processed to only include relevant data, the dataframe is saved to a csv file with a pipe character (|) as a delimiter since the Bing search query values included commas. These csv files are uploaded to s3 then copied into the respective Redshift table using the COPY command. Once the staging tables are loaded using the COPY command, SQL is run in order to populate the dimension and fact tables.
+
+## Step 4: Run ETL to model data
+
+### Data pipeline steps:
 
 __Note:__ All Python scripts save output to a log file in __logs__ directory __except__ upload_datasets_to_s3 which prints output to the screen.
 
@@ -40,9 +52,7 @@ __Note:__ All Python scripts save output to a log file in __logs__ directory __e
 5. Run __create_wh_tables.py__ to create warehouse tables in destination Redshift database.
 6. Run __etl.py__ to load staging tables from s3 datasets and then load dimension and fact tables using SQL against staging tables.
 
-## Step 4: Run ETL to model data
-
-### Data dictionary
+### Data dictionary:
 * __vaccine_dim__ table
 
 	| Column | Data Type | Description |
@@ -105,7 +115,9 @@ __Note:__ All Python scripts save output to a log file in __logs__ directory __e
 
 ## Step 5: Complete project write up
 
-1. Goal
+1. __Goal__
+
+	The primary goal for this covid_fact table was to...
 
 	Apache Spark isn’t really needed for this data pipeline as the pipeline does not require a real-time big data analytics and is not aggregating data from sources outside a DBMS such as S3.  
 	
@@ -113,15 +125,15 @@ __Note:__ All Python scripts save output to a log file in __logs__ directory __e
 	manual intervention is not needed in order to execute the pipeline. Airflow would also allow 
 	the data pipeline to be integrated into the team’s incident notification tool.
 
-2. Rationale
+2. __Rationale__
 
 	AWS Redshift was chosen as the database since the data is coming from disparate sources and is relational in nature based on relation of dates and locations. I chose not to use S3 for the stage data as I found it useful in this case to have relational database functionality to process new/future records and also because Spark was not needed to process the staged data.
 
-3. Steps of process
+3. __Steps of process__
 
 	This is documented in the __Data pipeline steps__ section under __Step 3__.
 
-4. Propose frequency of pipeline execution
+4. __Propose frequency of pipeline execution__
 
 	My proposition of pipeline execution frequency would depend on the needs of the 
 	downstream customer and the frequency that the data at the source was updated. I believe it 
@@ -129,11 +141,11 @@ __Note:__ All Python scripts save output to a log file in __logs__ directory __e
 	enough data versus the utilization of computing resources to process and store the data for 
 	querying by end users.
 
-5. GitHub Repository
+5. __GitHub Repository__
 
 	[https://github.com/cftrebor/capstone-project](https://github.com/cftrebor/capstone-project)
 
-6. How would you approach the problem differently under the following scenarios:
+6. __How would you approach the problem differently under the following scenarios:__
 
 
 * __Data was increased by 100x:__
