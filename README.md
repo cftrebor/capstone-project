@@ -152,7 +152,7 @@ __Note:__ All Python scripts save output to a log file in __logs__ directory __e
 
 2. __Rationale__
 
-	AWS Redshift was chosen as the database since the data is coming from disparate sources and is relational in nature based on relation of date and location values. A relational database model and available aggregate functions are helpful in this case. A noSQL database engine would not be more appropriate for this project due to data volume and type of data used in the project.
+	AWS Redshift was chosen as the database since the data is coming from disparate sources and is relational in nature based on relation of date and location values. A relational database model and available aggregate functions are helpful in this case. A noSQL database engine would not be more appropriate for this project due to data volume and type of data used in the project. Spark was not necessary at this time due to data volume and data update frequency. Airflow was also not necessary at this time due to no requirement of the pipeline being scheduled or automated and there being no SLA.
 
 3. __Steps of process__
 
