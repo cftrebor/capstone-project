@@ -84,14 +84,14 @@ def process_vacc_data(source, destination):
         if nans > 0:   
             vacc_df[col].fillna('0001-01-01', inplace=True)
             logging.info(f'NaNs were replaced for column {col}')
-            
+
     # apply default value for integer columns            
     for col in integer_cols:
         nans = vacc_df[col].isna().sum()
         if nans > 0: 
             vacc_df[col].fillna(-1, inplace=True)
             logging.info(f'NaNs were replaced for column {col}')
-
+                    
     # apply default value for character columns             
     for col in char_cols:
         nans = vacc_df[col].isna().sum()
@@ -107,6 +107,16 @@ def process_vacc_data(source, destination):
         sys.exit()
     else:
         logging.info('All NaNs have been removed from the dataframe.')
+
+    # check that only expected state abbreviations exist
+    valid_abbrvs = list(state_abbrv_dict.values())
+    state_abbrvs = vacc_df['Location'].tolist()
+    for abbrv in state_abbrvs:
+        if abbrv not in valid_abbrvs:
+            logging.error(f'{abbrv} exists in the Location column of the vaccine dataframe and is not a valid State abbreviation.')
+            sys.exit()
+        else:
+            continue
 
     # save final dataframe to csv file in processed data directory
     logging.info("Saving processed vaccination dataframe to csv file.")
@@ -139,20 +149,22 @@ def process_cases_death_data(source, destination):
             cases_death_df[col].fillna('0001-01-01', inplace=True)
             logging.info(f'NaNs were replaced for column {col}')
             
-    # apply default value for integer columns            
+    # data checks          
     for col in integer_cols:
+         # apply default value for integer columns 
         nans = cases_death_df[col].isna().sum()
         if nans > 0: 
             cases_death_df[col].fillna(-1, inplace=True)
             logging.info(f'NaNs were replaced for column {col}')
 
+    # data checks
     # apply default value for character columns             
     for col in char_cols:
         nans = cases_death_df[col].isna().sum()
         if nans > 0: 
             cases_death_df[col].fillna(' ', inplace=True)
             logging.info(f'NaNs were replaced for column {col}')
-            
+
     # get total NaN count after NaN processing            
     # if total NaNs > 0 exit program
     total_nans = cases_death_df.isna().sum().sum()
@@ -160,7 +172,17 @@ def process_cases_death_data(source, destination):
         logging.error('NaNs still exist.')
         sys.exit()
     else:
-        logging.info('All NaNs have been removed from the dataframe.')
+        logging.info('All NaNs have been removed from the Cases and Deaths dataframe.')
+
+    # check that only expected state abbreviations exist
+    valid_abbrvs = list(state_abbrv_dict.values())
+    state_abbrvs = cases_death_df['state'].tolist()
+    for abbrv in state_abbrvs:
+        if abbrv not in valid_abbrvs:
+            logging.error(f'{abbrv} exists in the state column of the Cases and Deaths dataframe and is not a valid State abbreviation.')
+            sys.exit()
+        else:
+            continue
 
     # save final dataframe to csv file in processed data directory
     logging.info("Saving processed cases and death dataframe to csv file.")
