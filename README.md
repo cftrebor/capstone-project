@@ -128,7 +128,7 @@ __Note:__ All Python scripts save output to a log file in __logs__ directory __e
 1. __Goal__
 
 	The primary goal for this project was to enable searching of COVID-19 trends and if there was any correlation between the different dimensions and would mostly be used for reporting purposes.
-	* One could search the fact table by state to see how the trends of COVID-19 cases and deaths and vaccines changed over time. The SQL query would be something like:
+	* One could search the fact table by state to see how the trends of COVID-19 cases and deaths and vaccines changed over time. The SQL query would be something like the below. Sample query results [here](ETL/Reports/Vaccines_CA.csv).
 
 		```	
 		SELECT date, tot_cases, tot_death, administered, additional_doses
@@ -137,7 +137,7 @@ __Note:__ All Python scripts save output to a log file in __logs__ directory __e
 		ORDER BY date asc;
 		```
 
-	* It is also interesting to see how Bing search queries changed throughout the pandemic for a specific state. The SQL query would be something like:
+	* It is also interesting to see how Bing search queries changed throughout the pandemic for a specific state. The SQL query would be something like the below. Sample query results [here](ETL/Reports/Bing_Search_NY.csv).
 
 		```
 		SELECT date, bing_search_queries
